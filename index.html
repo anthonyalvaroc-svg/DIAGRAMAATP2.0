@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Generador de Esquemas Técnicos (SPAT / Perímetro / Torre / Equipos / Ruta)</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    crossorigin=""
+  />
+</head>
+<body>
+  <div class="container">
+    <header class="app-header">
+      <div class="header-row">
+        <div>
+          <h1>Generador de Esquemas Técnicos</h1>
+          <p class="sub">Completa los datos técnicos o importa desde tus fotos/Excel y descarga cada plano en PNG.</p>
+        </div>
+        <div class="header-actions-top">
+          <button type="button" id="btnNuevoSitioConBase" class="btn-action btn-ghost">Nuevo Sitio (Usar Plantilla)</button>
+          <button type="button" id="btnDescargarTodoLote" class="btn-action btn-primary">Descargar Todo (F10)</button>
+          <button type="button" id="btnResetTodo" class="btn-action btn-ghost">Restablecer</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="shared-site-bar" aria-label="Datos generales del sitio">
+      <div class="shared-bar-grid-4">
+        <div class="field">
+          <label for="sitio">CÓDIGO / NOMBRE DEL SITIO (Todas las pestañas)</label>
+          <input type="text" id="sitio" value="LI0123_SITIO" placeholder="Ej. LI0123_SITIO" />
+        </div>
+        <div class="field">
+          <label for="globalTipoTorre">TIPO DE TORRE (Sincroniza Pestañas 1, 2, 3 y 4)</label>
+          <select id="globalTipoTorre">
+            <option value="arbol">1. Torre público tipo árbol</option>
+            <option value="monopolo">2. Torre monopolo (3 roldanas)</option>
+            <option value="autosoportada_normal">3. Autosoportada (roldana normal)</option>
+            <option value="arriostrada_escalera_gato">4. Arriostrada con escalera gato</option>
+            <option value="ventada_edificio">5. Ventada con edificio</option>
+            <option value="ventada_piso">6. Ventada de piso</option>
+            <option value="autosoportada_encima">7. Autosoportada (roldana encima)</option>
+            <option value="arriostrada_edificio_normal">8. Arriostrada con edificio normal</option>
+            <option value="autosoportada_sin_roldana">9. Autosoportada sin roldana</option>
+            <option value="estructura_especial">10. Torre estructura especial</option>
+            <option value="autosoportada_rooftop">11. Autosoportada rooftop</option>
+            <option value="monopolo_1_roldana">12. Monopolo 1 roldana</option>
+            <option value="monopolo_2_roldanas">13. Monopolo 2 roldanas</option>
+            <option value="monoposte">14. Torre monoposte</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="globalAlturaTorre">ALTURA TOTAL TORRE (m) (Sincroniza 3 y 4)</label>
+          <input type="number" id="globalAlturaTorre" step="0.01" min="0" value="30.00" />
+        </div>
+        <div class="shared-sync-badge">
+          5 Pestañas Sincronizadas • Atajo: Ctrl+Enter descarga
+        </div>
+      </div>
+    </section>
+
+    <nav class="tabs" role="tablist" aria-label="Esquemas disponibles">
+      <button type="button" class="tab-btn active" data-tab="tabSpat" role="tab" aria-selected="true" tabindex="0">
+        1. F12M - SPAT
+      </button>
+      <button type="button" class="tab-btn" data-tab="tabPerimetro" role="tab" aria-selected="false" tabindex="-1">
+        2. Esquema 1 - Perímetro
+      </button>
+      <button type="button" class="tab-btn" data-tab="tabTorre" role="tab" aria-selected="false" tabindex="-1">
+        3. Esquema 2 - Torre
+      </button>
+      <button type="button" class="tab-btn" data-tab="tabEquipos" role="tab" aria-selected="false" tabindex="-1">
+        4. Equipos en Torre
+      </button>
+      <button type="button" class="tab-btn" data-tab="tabRuta" role="tab" aria-selected="false" tabindex="-1">
+        5. Ruta al Sitio
+      </button>
+    </nav>
+
+    <!-- PESTAÑA 1: F12M - SPAT -->
+    <section id="tabSpat" class="tab-panel active" role="tabpanel">
+      <div class="grid-form">
+        <div class="field">
+          <label for="spatTipoTorre">Símbolo de Torre</label>
+          <select id="spatTipoTorre">
+            <option value="auto_cuadrado">Autosoportada (Cuadrada)</option>
+            <option value="auto_triangulo">Autosoportada (Triangular)</option>
+            <option value="monopolo" selected>Monopolo / Árbol</option>
+            <option value="ventada">Ventada</option>
+            <option value="arriostrada">Arriostrada</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="cantidadPozos">Cantidad de Pozos (PT)</label>
+          <select id="cantidadPozos">
+            <option value="1">1 Pozo (PT01)</option>
+            <option value="2">2 Pozos (PT01 - PT02)</option>
+            <option value="3" selected>3 Pozos (PT01 - PT03)</option>
+            <option value="4">4 Pozos (PT01 - PT04)</option>
+            <option value="5">5 Pozos (PT01 - PT05)</option>
+            <option value="6">6 Pozos (PT01 - PT06)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="val50">Medición 50% - 15 MTS (OHMS)</label>
+          <input type="number" id="val50" step="0.01" min="0" value="2.15" />
+        </div>
+        <div class="field">
+          <label for="val60">Medición 60% - 18 MTS (OHMS)</label>
+          <input type="number" id="val60" step="0.01" min="0" value="2.20" />
+        </div>
+        <div class="field">
+          <label for="val70">Medición 70% - 21 MTS (OHMS)</label>
+          <input type="number" id="val70" step="0.01" min="0" value="2.28" />
+        </div>
+      </div>
+
+      <div id="avisoSpat" class="notice" hidden></div>
+
+      <div class="actions">
+        <button type="button" id="btnActualizarSpat" class="btn-action btn-secondary">Actualizar Vista</button>
+        <button type="button" id="btnDescargarSpat" class="btn-action btn-primary">Descargar PNG (SPAT)</button>
+      </div>
+
+      <div class="canvas-wrap">
+        <canvas id="canvasSpat" width="1020" height="1040"></canvas>
+      </div>
+    </section>
+
+    <!-- PESTAÑA 2: ESQUEMA 1 - PERÍMETRO (FORMATO GMS Y DECIMAL) -->
+    <section id="tabPerimetro" class="tab-panel" role="tabpanel" hidden>
+      <div class="grid-form">
+        <div class="field">
+          <label for="perAncho">Ancho Horizontal (MTS)</label>
+          <input type="number" id="perAncho" step="0.01" min="0.1" value="8.10" />
+        </div>
+        <div class="field">
+          <label for="perLargo">Largo Vertical (MTS)</label>
+          <input type="number" id="perLargo" step="0.01" min="0.1" value="10.00" />
+        </div>
+        <div class="field">
+          <label for="perTipoTorre">Símbolo de Torre</label>
+          <select id="perTipoTorre">
+            <option value="auto_cuadrado">Autosoportada (Cuadrada)</option>
+            <option value="auto_triangulo">Autosoportada (Triangular)</option>
+            <option value="monopolo" selected>Monopolo / Árbol</option>
+            <option value="ventada">Ventada</option>
+            <option value="arriostrada">Arriostrada</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="perFormatoCoord">Formato de Coordenadas</label>
+          <select id="perFormatoCoord">
+            <option value="gms" selected>Grados, Minutos y Segundos (GMS)</option>
+            <option value="decimal">Grados Decimales (-11.8645, -77.0765)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid-form">
+        <div class="field">
+          <label for="coordA">Coordenada A (Sup. Izq. - Sincroniza Ruta)</label>
+          <input type="text" id="coordA" value="11°51'52.24&quot;S 77°04'35.55&quot;W" />
+        </div>
+        <div class="field">
+          <label for="coordB">Coordenada B (Sup. Der.)</label>
+          <input type="text" id="coordB" value="11°51'52.24&quot;S 77°04'35.29&quot;W" />
+        </div>
+        <div class="field">
+          <label for="coordC">Coordenada C (Inf. Der.)</label>
+          <input type="text" id="coordC" value="11°51'52.55&quot;S 77°04'35.28&quot;W" />
+        </div>
+        <div class="field">
+          <label for="coordD">Coordenada D (Inf. Izq.)</label>
+          <input type="text" id="coordD" value="11°51'52.56&quot;S 77°04'35.55&quot;W" />
+        </div>
+      </div>
+
+      <div id="avisoPerimetro" class="notice" hidden></div>
+
+      <div class="actions">
+        <button type="button" id="btnConvertirCoordsGMS" class="btn-action btn-ghost">Formatear a GMS (00°00'00.00")</button>
+        <button type="button" id="btnActualizarPer" class="btn-action btn-secondary">Actualizar Vista</button>
+        <button type="button" id="btnDescargarPer" class="btn-action btn-primary">Descargar PNG (Perímetro)</button>
+      </div>
+
+      <div class="canvas-wrap">
+        <canvas id="canvasPerimetro" width="1020" height="820"></canvas>
+      </div>
+    </section>
+
+    <!-- PESTAÑA 3: ESQUEMA 2 - TORRE (14 MODELOS) -->
+    <section id="tabTorre" class="tab-panel" role="tabpanel" hidden>
+      <div class="grid-form">
+        <div class="field">
+          <label for="torreTipo">Modelo de Torre (14 tipos)</label>
+          <select id="torreTipo">
+            <option value="arbol">1. Torre público tipo árbol</option>
+            <option value="monopolo">2. Torre monopolo (3 roldanas)</option>
+            <option value="autosoportada_normal">3. Torre autosoportada (roldana normal)</option>
+            <option value="arriostrada_escalera_gato">4. Torre arriostrada con escalera gato</option>
+            <option value="ventada_edificio">5. Torre ventada con edificio</option>
+            <option value="ventada_piso">6. Torre ventada de piso</option>
+            <option value="autosoportada_encima">7. Torre autosoportada (roldana encima)</option>
+            <option value="arriostrada_edificio_normal">8. Torre arriostrada con edificio normal</option>
+            <option value="autosoportada_sin_roldana">9. Torre autosoportada sin roldana</option>
+            <option value="estructura_especial">10. Torre estructura especial</option>
+            <option value="autosoportada_rooftop">11. Torre autosoportada rooftop</option>
+            <option value="monopolo_1_roldana">12. Torre monopolo 1 roldana</option>
+            <option value="monopolo_2_roldanas">13. Torre monopolo 2 roldanas</option>
+            <option value="monoposte">14. Torre monoposte</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="alturaTorre">Altura Torre + Base / Pedestal (m)</label>
+          <input type="number" id="alturaTorre" step="0.01" min="0" value="30.00" />
+        </div>
+        <div class="field">
+          <label for="alturaBase">Altura Base / Pedestal (m)</label>
+          <input type="number" id="alturaBase" step="0.01" min="0" value="1.20" />
+        </div>
+        <div class="field grp-roldana-std">
+          <label for="roldanaSup">Altura Roldana Superior (m)</label>
+          <input type="number" id="roldanaSup" step="0.01" min="0" value="28.50" />
+        </div>
+        <div class="field grp-roldana-std">
+          <label for="roldanaInf">Altura Roldana Inferior (m)</label>
+          <input type="number" id="roldanaInf" step="0.01" min="0" value="27.30" />
+        </div>
+        <div class="field grp-monopolo" hidden>
+          <label for="rol1Sup">Altura Roldana 1 Superior (m)</label>
+          <input type="number" id="rol1Sup" step="0.01" min="0" value="29.00" />
+        </div>
+        <div class="field grp-monopolo" hidden>
+          <label for="rol1Inf">Altura Roldana 1 Inferior (m)</label>
+          <input type="number" id="rol1Inf" step="0.01" min="0" value="27.80" />
+        </div>
+        <div class="field grp-monopolo" hidden>
+          <label for="rol2Sup">Altura Roldana 2 Superior (m)</label>
+          <input type="number" id="rol2Sup" step="0.01" min="0" value="26.00" />
+        </div>
+        <div class="field grp-monopolo" hidden>
+          <label for="rol2Inf">Altura Roldana 2 Inferior (m)</label>
+          <input type="number" id="rol2Inf" step="0.01" min="0" value="24.80" />
+        </div>
+        <div class="field grp-monopolo" hidden>
+          <label for="rol3Sup">Altura Roldana 3 Superior (m)</label>
+          <input type="number" id="rol3Sup" step="0.01" min="0" value="23.00" />
+        </div>
+        <div class="field grp-monopolo" hidden>
+          <label for="rol3Inf">Altura Roldana 3 Inferior (m)</label>
+          <input type="number" id="rol3Inf" step="0.01" min="0" value="21.80" />
+        </div>
+        <div class="field grp-escalera" hidden>
+          <label for="alturaEscaleraGato">Altura Escalera Gato (m)</label>
+          <input type="number" id="alturaEscaleraGato" step="0.01" min="0" value="2.40" />
+        </div>
+        <div class="field grp-edificio" hidden>
+          <label for="alturaEdificio">Altura Edificio sin Parapeto (m)</label>
+          <input type="number" id="alturaEdificio" step="0.01" min="0" value="12.00" />
+        </div>
+        <div class="field">
+          <label for="customTorreImg">Imagen base de este modelo (opcional)</label>
+          <input type="file" id="customTorreImg" accept="image/*" />
+        </div>
+      </div>
+
+      <div id="avisoTorre" class="notice" hidden></div>
+
+      <div class="actions">
+        <button type="button" id="btnActualizarTorre" class="btn-action btn-secondary">Actualizar Vista</button>
+        <button type="button" id="btnDescargarTorre" class="btn-action btn-primary">Descargar PNG (Torre)</button>
+        <button type="button" id="btnRestaurarImgTorre" class="btn-action btn-ghost" hidden>Restaurar Imagen Original</button>
+      </div>
+
+      <div class="canvas-wrap">
+        <canvas id="canvasTorre" width="900" height="1120"></canvas>
+      </div>
+    </section>
+
+    <!-- PESTAÑA 4: ESQUEMA DE EQUIPOS EN TORRE -->
+    <section id="tabEquipos" class="tab-panel" role="tabpanel" hidden>
+      <div class="grid-form">
+        <div class="field">
+          <label for="equiposFotos">1. Subir Fotos Panorámicas (1 a 4 fotos)</label>
+          <input type="file" id="equiposFotos" accept="image/*" multiple />
+        </div>
+        <div class="field">
+          <label for="equiposAlturaRef">Altura Máxima Torre (m) - Referencia</label>
+          <input type="number" id="equiposAlturaRef" step="0.01" min="1" value="30.00" />
+        </div>
+        <div class="field">
+          <label for="equiposAgrupar">Agrupar equipos a misma altura</label>
+          <select id="equiposAgrupar">
+            <option value="si" selected>Sí (Ej. RRU 12-13-14 a 25.0 m)</option>
+            <option value="no">No (Flecha individual por equipo)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="equiposFontSize">Tamaño de Etiqueta Roja</label>
+          <select id="equiposFontSize">
+            <option value="16">Pequeño (16 px)</option>
+            <option value="20" selected>Normal (20 px)</option>
+            <option value="24">Grande (24 px)</option>
+            <option value="28">Extra Grande (28 px)</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="ocrStatusBar" class="ocr-bar" hidden></div>
+      <div id="avisoEquipos" class="notice" hidden></div>
+
+      <div class="equipos-box">
+        <div class="equipos-box-header">
+          <div>
+            <strong>2. Lista de Equipos según su Altura</strong>
+            <span class="hint-inline">Ordenados de mayor a menor altura. Usa el botón <strong>IZQ / DER</strong> para cambiar el lado en 1 toque.</span>
+          </div>
+          <div class="equipos-quick-actions">
+            <label class="btn-action btn-ghost file-btn-label" for="inputExcelEquipos">Subir Excel / CSV / JPG / PNG</label>
+            <input type="file" id="inputExcelEquipos" accept=".xlsx,.xls,.csv,.txt,.jpg,.jpeg,.png,image/*" hidden />
+            <button type="button" id="btnPegarListaEquipos" class="btn-action btn-ghost">Pegar Lista / Portal</button>
+            <button type="button" id="btnPlantillasEquipos" class="btn-action btn-ghost">Plantillas Rápidas</button>
+            <button type="button" id="btnAjusteMasivoAlturas" class="btn-action btn-ghost">+/- Alturas</button>
+            <button type="button" id="btnAgregarEquipo" class="btn-action btn-secondary">+ Agregar Equipo</button>
+          </div>
+        </div>
+
+        <div id="panelAjusteAlturas" class="paste-panel" hidden>
+          <label>Ajuste rápido de alturas en lote (ideal al pasar de una torre de 30m a otra de 36m o 24m):</label>
+          <div class="actions" style="margin-bottom: 8px; align-items: center;">
+            <input type="number" id="inpDeltaAltura" step="0.1" value="3.00" style="width: 110px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: bold;" />
+            <button type="button" id="btnSumarDeltaAltura" class="btn-action btn-secondary">Sumar (+m) a Todos</button>
+            <button type="button" id="btnRestarDeltaAltura" class="btn-action btn-ghost">Restar (-m) a Todos</button>
+            <button type="button" id="btnEscalarProporcional" class="btn-action btn-ghost">Escalar a Altura Torre</button>
+          </div>
+          <div class="actions" style="margin-bottom: 0;">
+            <button type="button" id="btnGuardarPlantillaUsuario" class="btn-action btn-primary">Guardar Lista Actual como Mi Plantilla</button>
+            <button type="button" id="btnCargarPlantillaUsuario" class="btn-action btn-ghost">Cargar Mi Plantilla Guardada</button>
+            <button type="button" id="btnCerrarAjusteAlturas" class="btn-action btn-ghost">Cerrar</button>
+          </div>
+        </div>
+
+        <div class="smart-learning-box">
+          <div class="smart-learning-header">
+            <div>
+              <strong>Motor de Aprendizaje y Plantillas de Flechas (Torres Iguales)</strong>
+              <span id="lblResumenAprendizaje" class="hint-inline">Sitios aprendidos: 0 | Plantillas de flechas guardadas: 0</span>
+            </div>
+            <div class="equipos-quick-actions">
+              <button type="button" id="btnAprenderSitioActual" class="btn-action btn-secondary">Aprender Este Sitio</button>
+              <button type="button" id="btnAplicarAprendizajeAuto" class="btn-action btn-primary">Auto-Acomodar Flechas (IA Local)</button>
+            </div>
+          </div>
+
+          <div class="smart-tpl-grid">
+            <div class="field">
+              <label for="inpNombrePlantillaFlechas">Guardar como Plantilla de Torre Igual (con posiciones exactas de flechas):</label>
+              <div style="display: flex; gap: 6px;">
+                <input type="text" id="inpNombrePlantillaFlechas" placeholder="Ej. Monopolo 30m 3 Sectores" />
+                <button type="button" id="btnGuardarPlantillaFlechas" class="btn-action btn-ghost">Guardar Plantilla</button>
+              </div>
+            </div>
+            <div class="field">
+              <label for="selPlantillasGuardadas">Aplicar Plantilla de Flechas Guardada:</label>
+              <div style="display: flex; gap: 6px;">
+                <select id="selPlantillasGuardadas">
+                  <option value="">-- Selecciona una plantilla guardada (0) --</option>
+                </select>
+                <button type="button" id="btnAplicarPlantillaGuardada" class="btn-action btn-secondary">Aplicar</button>
+                <button type="button" id="btnEliminarPlantillaGuardada" class="btn-danger-sm" title="Eliminar plantilla">X</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="actions" style="margin-top: 8px; margin-bottom: 0;">
+            <button type="button" id="btnExportarCerebro" class="btn-action btn-ghost" style="font-size: 12px; padding: 6px 10px;">Exportar Aprendizaje (JSON)</button>
+            <label for="inputImportarCerebro" class="btn-action btn-ghost file-btn-label" style="font-size: 12px; padding: 6px 10px;">Importar Aprendizaje (JSON)</label>
+            <input type="file" id="inputImportarCerebro" accept=".json,application/json" hidden />
+          </div>
+        </div>
+
+        <div id="panelPlantillasEquipos" class="paste-panel" hidden>
+          <label>Plantillas base rápidas de fábrica:</label>
+          <div class="actions" style="margin-bottom: 0;">
+            <button type="button" class="btn-action btn-ghost btn-tpl" data-tpl="3sectores">3 Sectores Estándar (6 RF + 6 RRU + 1 MW)</button>
+            <button type="button" class="btn-action btn-ghost btn-tpl" data-tpl="arbol">Monopolo / Árbol (3 RF + 6 RRU + 1 MW)</button>
+            <button type="button" class="btn-action btn-ghost btn-tpl" data-tpl="autosoportada_full">Autosoportada Multi-operador (9 RF + 9 RRU + 2 MW + GPS)</button>
+            <button type="button" id="btnCerrarPlantillas" class="btn-action btn-ghost">Cerrar</button>
+          </div>
+        </div>
+
+        <div id="panelPegarEquipos" class="paste-panel" hidden>
+          <label for="txtPegarEquipos">Pega aquí líneas desde Excel o el portal ATP (detecta automáticamente RF / RRU / MW / GPS, número y altura en metros):</label>
+          <textarea id="txtPegarEquipos" rows="5" placeholder="Ejemplo:
+RF 1	28.50	IZQ
+RF 2	28.50	DER
+RRU 1	27.80	IZQ"></textarea>
+          <div class="actions" style="margin-top: 8px; margin-bottom: 0;">
+            <button type="button" id="btnProcesarPegadoEquipos" class="btn-action btn-primary">Importar Lista</button>
+            <button type="button" id="btnCerrarPegadoEquipos" class="btn-action btn-ghost">Cancelar</button>
+          </div>
+        </div>
+
+        <div class="equipos-list-header">
+          <span>Equipo / Código</span>
+          <span>Altura (m)</span>
+          <span>Lado</span>
+          <span>Quitar</span>
+        </div>
+        <div id="listaEquiposContainer" class="equipos-list-container"></div>
+      </div>
+
+      <div class="actions">
+        <button type="button" id="btnDescargarUnidaEquipos" class="btn-action btn-primary">Descargar Todo en 1 Imagen (PNG)</button>
+        <button type="button" id="btnAutoAcomodarRapido" class="btn-action btn-secondary">Auto-Llenar Flechas (Aprendido)</button>
+        <select id="equiposLayoutUnido" class="select-inline-action" aria-label="Disposición de unión de fotos">
+          <option value="horizontal" selected>Unir: Lado a lado (Horizontal)</option>
+          <option value="grid">Unir: Cuadrícula (2x2)</option>
+          <option value="vertical">Unir: Una debajo de otra (Vertical)</option>
+        </select>
+        <button type="button" id="btnAutoDistribuirEquipos" class="btn-action btn-secondary">Recalcular Flechas</button>
+        <button type="button" id="btnAlinearMargenes" class="btn-action btn-ghost">Alinear Etiquetas en Margen</button>
+        <button type="button" id="btnToggleLockDrag" class="btn-action btn-ghost" aria-pressed="false">Bloquear Arrastre en Fotos</button>
+        <button type="button" id="btnLimpiarFotosEquipos" class="btn-action btn-ghost">Quitar Fotos</button>
+      </div>
+
+      <p class="drag-tip">
+        <strong>Ajuste táctil de precisión:</strong> Arrastra el <strong>texto rojo</strong> o el <strong>punto rojo</strong> en cada foto (en celular la punta se eleva sobre tu dedo para que veas dónde apuntas). También puedes usar <strong>"Calibrar Cima/Base"</strong> en cada foto si es un zoom parcial.
+      </p>
+
+      <div id="galeriaEquipos" class="galeria-equipos">
+        <div class="empty-photos-msg">
+          Sube de 1 a 4 fotos panorámicas de la torre para generar automáticamente las flechas rojas y etiquetas según la lista de alturas. Luego descarga todas juntas en 1 sola imagen PNG (botón verde) o cada foto por separado.
+        </div>
+      </div>
+    </section>
+
+    <!-- PESTAÑA 5: DIAGRAMA RUTA AL SITIO -->
+    <section id="tabRuta" class="tab-panel" role="tabpanel" hidden>
+      <div class="grid-form">
+        <div class="field">
+          <label for="rutaOrigen">1. Custodio de Llaves (Inicio - Coordenadas o Dirección)</label>
+          <input type="text" id="rutaOrigen" placeholder="Ej. 12°06'54.9&quot;S 77°01'05.5&quot;W o Av. Sáenz Peña, Callao" />
+        </div>
+        <div class="field">
+          <label for="rutaDestino">2. Estación / Torre (Destino - Sincronizado con Pestaña 2)</label>
+          <input type="text" id="rutaDestino" placeholder="Se sincroniza automáticamente desde Coordenada A" />
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom: 12px;">
+        <label for="rutaDetalleTexto">3. Detalle de la Ruta (Generado automáticamente - editable para el cuadro rojo)</label>
+        <textarea id="rutaDetalleTexto" rows="5" placeholder="SACAR LLAVES EN..."></textarea>
+      </div>
+
+      <div id="avisoRuta" class="notice" hidden></div>
+
+      <div class="actions">
+        <button type="button" id="btnCalcularRuta" class="btn-action btn-secondary">Trazar Ruta y Generar Texto</button>
+        <button type="button" id="btnAbrirGoogleMaps" class="btn-action btn-ghost">Abrir en Google Maps</button>
+        <button type="button" id="btnRedibujarRuta" class="btn-action btn-ghost">Actualizar Imagen</button>
+        <button type="button" id="btnDescargarRuta" class="btn-action btn-primary">Descargar PNG Ruta</button>
+      </div>
+
+      <p class="drag-tip">
+        <strong>Ajuste táctil:</strong> Arrastra el <strong>cuadro rojo</strong> o la <strong>punta hacia el custodio</strong> directamente sobre la vista previa final antes de descargar.
+      </p>
+
+      <div class="ruta-editor-grid">
+        <div class="ruta-map-box">
+          <div class="ruta-box-label">1. Mapa Interactivo (Puedes hacer zoom o encuadrar la ruta)</div>
+          <div id="mapaRutaLeaflet" style="width: 100%; height: 390px; border-radius: 8px;"></div>
+        </div>
+        <div class="ruta-preview-box">
+          <div class="ruta-box-label">2. Vista Previa Final con Cuadro Rojo (Descargable)</div>
+          <div class="canvas-wrap">
+            <canvas id="canvasRutaFinal" width="1000" height="580"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
+  <script src="app.js" defer></script>
+</body>
+</html>
